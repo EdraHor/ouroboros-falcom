@@ -1,1 +1,0 @@
-@for %%i in (*.jpg) do @..\..\bin2str.exe "%%~fi"
