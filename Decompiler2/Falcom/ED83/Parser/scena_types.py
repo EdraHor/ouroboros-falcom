@@ -995,6 +995,8 @@ class ScenaAlgoTableEntry:
         fs = io.BytesIO()
 
         fs.write(utils.int_to_bytes(self.craftId, 2))
+        if self.craftId == self.InvalidID and not self.hasExitCode():
+            return fs.getvalue()        # terminator: read() stops after craftId too
         fs.write(utils.int_to_bytes(self.aiType, 1))
         fs.write(utils.int_to_bytes(self.probability, 1))
         fs.write(utils.int_to_bytes(self.maxNumOfUses, 1))
@@ -1101,6 +1103,7 @@ class ScenaBreakTable:
         for _ in range(0x40):
             d = fs.ReadULong()
             if d & 0xFFFF == self.InvalidID:
+                self._termHigh = (d >> 16) & 0xFFFF     # 1 (= Return) or 0 in the game files
                 break
 
             self.breakData.append((d & 0xFFFF, (d >> 16) & 0xFFFF))
@@ -1111,7 +1114,7 @@ class ScenaBreakTable:
             fs.write(utils.int_to_bytes(d[0] | (d[1] << 16), 4))
 
         fs.write(utils.int_to_bytes(self.InvalidID, 2))
-        fs.write(utils.int_to_bytes(1, 2))
+        fs.write(utils.int_to_bytes(getattr(self, '_termHigh', 1), 2))
         return fs.getvalue()
 
     def toPython(self) -> List[str]:
@@ -1124,6 +1127,9 @@ class ScenaBreakTable:
             f.append(f'{DefaultIndent}({"0x%X, %d" % d}),',)
 
         f.append(')')
+        if getattr(self, '_termHigh', 1) != 1:
+            f[0] = 'BreakTableTerm(' + f[0]
+            f[-1] += f', {self._termHigh})'
         return f
 
 class ScenaSummonTableEntry:
@@ -1379,7 +1385,7 @@ class ScenaReactionTable:
             return
 
         self.reactions = []
-        for _ in range(4):
+        for _ in range(8):
             e = ScenaReactionTableEntry(fs = fs)
             if e.craftId == ScenaReactionTableEntry.InvalidID:
                 break
