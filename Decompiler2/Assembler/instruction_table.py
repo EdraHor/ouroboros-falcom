@@ -189,9 +189,9 @@ class OperandDescriptor:
         if math.isnan(operand.value):
             return "float('nan')"
 
-        v: str = '%g' % operand.value
-        if v.find('e') != -1:
-            return '%f' % operand.value
+        v: str = repr(operand.value)    # exact: '%g' kept only 6 digits and turned denormals into 0
+        if v.find('e') != -1 or v in ('inf', '-inf'):
+            return f"float('{v}')" if 'inf' in v else v
 
         if v.find('.') == -1:
             v += '.0'
