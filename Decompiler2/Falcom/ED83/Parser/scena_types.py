@@ -226,7 +226,10 @@ class ScenaBattleMonsterSet:
             case _:
                 self.monsters               = [utils.read_fixed_string(fs, 0x10) for _ in range(8)]     # 0x04
                 self.encounterProbability   = [fs.ReadByte() for _ in range(8)]                         # 0x84
-                self.bytes8C                = fs.Read(8)                                                # 0x8C
+                # 0x8C: 8 zero bytes, or a monster name padded to 12 bytes (r4400) - same rule as SenScriptsDecompiler
+                first = fs.ReadByte()
+                fs.Position -= 1
+                self.bytes8C                = fs.Read(8 if first == 0 else 12)                          # 0x8C
 
     def serialize(self) -> bytes:
         fs = io.BytesIO()
@@ -244,8 +247,7 @@ class ScenaBattleMonsterSet:
             case _:
                 [fs.write(utils.pad_string(m, 0x10)) for m in self.monsters]
                 [fs.write(utils.int_to_bytes(p, 1)) for p in self.encounterProbability]
-                # fs.write(self.bytes8C)
-                fs.write(b'\x00' * 8)
+                fs.write(self.bytes8C if self.bytes8C is not None else b'\x00' * 8)
 
         return fs.getvalue()
 
@@ -261,6 +263,7 @@ class ScenaBattleMonsterSet:
                     f'{indent}id                      = 0x{self.id:X},',
                     f'{indent}monsters                = {self.monsters},',
                     f'{indent}encounterProbability    = {self.encounterProbability},',
+                    *([f'{indent}bytes8C                 = {self.bytes8C!r},'] if self.bytes8C not in (None, b'\x00' * 8) else []),
                     ')',
                 ]
 
