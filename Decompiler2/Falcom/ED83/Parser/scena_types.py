@@ -152,6 +152,8 @@ class ScenaFunctionType(IntEnum2):
     FaceAuto            = 15    # FC_autoXX
     ShinigPomBtlset     = 16
     StyleName           = 17
+    BookData99          = 18    # book/*.dat: BookDataNN_99
+    BookData            = 19    # book/*.dat: BookDataNN_MM
 
 ScenaDataFunctionTypes = set([
     ScenaFunctionType.BattleSetting,
@@ -170,6 +172,8 @@ ScenaDataFunctionTypes = set([
     ScenaFunctionType.FaceAuto,
     ScenaFunctionType.ShinigPomBtlset,
     ScenaFunctionType.StyleName,
+    ScenaFunctionType.BookData99,
+    ScenaFunctionType.BookData,
 ])
 
 class ScenaFunction:
@@ -1435,3 +1439,83 @@ class ScenaFaceAuto:
 
     def toPython(self) -> List[str]:
         return [f"ScenaFaceAuto('{self.s}')"]
+
+class ScenaBookData99:
+    """book/*.dat, BookDataNN_99: two shorts (layout from SenScriptsDecompiler)."""
+
+    def __init__(self, *values: int, fs: fileio.FileStream = None):
+        self.values = values
+        self.read(fs)
+
+    def read(self, fs: fileio.FileStream):
+        if not fs:
+            return
+        self.values = [fs.ReadUShort(), fs.ReadUShort()]
+
+    def serialize(self) -> bytes:
+        return b''.join(utils.int_to_bytes(v, 2) for v in self.values)
+
+    def toPython(self) -> List[str]:
+        return [f'ScenaBookData99({", ".join("0x%04X" % v for v in self.values)})']
+
+
+class ScenaBookData:
+    """book/*.dat, BookDataNN_MM (layout from SenScriptsDecompiler):
+         short control; if control > 0: short word2, title (16 bytes), 10 shorts, text\\0
+                        else:            text\\0 (absent if the next byte is the Return 0x01)"""
+
+    def __init__(self, control: int = 0, word2: int = 0, title: str = None, titlePad: bytes = None,
+                 values: List[int] = None, text: str = None, *, fs: fileio.FileStream = None):
+        self.control  = control
+        self.word2    = word2
+        self.title    = title
+        self.titlePad = titlePad
+        self.values   = values
+        self.text     = text
+        self.read(fs)
+
+    def read(self, fs: fileio.FileStream):
+        if not fs:
+            return
+        self.control = fs.ReadShort()
+        if self.control > 0:
+            self.word2 = fs.ReadUShort()
+            raw = fs.Read(0x10)
+            enc = raw.split(b'\x00', 1)[0]
+            self.title = enc.decode(GlobalConfig.DefaultEncoding)
+            self.titlePad = raw[len(enc):]
+            self.values = [fs.ReadUShort() for _ in range(10)]
+            self.text = fs.ReadMultiByte(GlobalConfig.DefaultEncoding)
+        else:
+            with fs.PositionSaver:
+                nxt = fs.ReadByte()
+            self.text = None if nxt == 1 else fs.ReadMultiByte(GlobalConfig.DefaultEncoding)
+
+    def serialize(self) -> bytes:
+        b = bytearray(int.to_bytes(self.control, 2, GlobalConfig.DefaultEndian, signed = True))
+        if self.control > 0:
+            b += utils.int_to_bytes(self.word2, 2)
+            enc = self.title.encode(GlobalConfig.DefaultEncoding)
+            if len(enc) >= 0x10:
+                raise ValueError(f'book title longer than 15 bytes: {self.title!r}')
+            pad = self.titlePad if self.titlePad is not None and len(enc) + len(self.titlePad) == 0x10 else b''
+            b += (enc + pad).ljust(0x10, b'\x00')
+            for v in self.values:
+                b += utils.int_to_bytes(v, 2)
+        if self.text is not None:
+            b += utils.str_to_bytes(self.text)
+        return bytes(b)
+
+    def toPython(self) -> List[str]:
+        if self.control > 0:
+            return [
+                'ScenaBookData(',
+                f'{DefaultIndent}control  = {self.control},',
+                f'{DefaultIndent}word2    = 0x{self.word2:04X},',
+                f'{DefaultIndent}title    = {self.title!r},',
+                f'{DefaultIndent}titlePad = {self.titlePad!r},',
+                f'{DefaultIndent}values   = [{", ".join("0x%04X" % v for v in self.values)}],',
+                f'{DefaultIndent}text     = {self.text!r},',
+                ')',
+            ]
+        return [f'ScenaBookData(control = {self.control}, text = {self.text!r})']
