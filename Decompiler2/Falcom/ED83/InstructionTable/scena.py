@@ -924,7 +924,7 @@ def Handler_54(ctx: InstructionHandlerContext):
             # 0x00: 'L' * 8,
             0x01: 'L' + 'f' * 7,
             0x03: 'L' * 8,
-            0x07: '',
+            0x07: 'L' * 8,
             0x08: 'L' * 8,
             0x0A: 'B',
             0x0B: 'W',          # resetAttach
