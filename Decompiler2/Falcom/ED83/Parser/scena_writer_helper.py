@@ -438,6 +438,8 @@ def WithTail(obj, tail: bytes = b'', ret: bool = True):
     obj._ret = ret
     return obj
 
+def ReplaceBGMReset():
+    BGMCmd(0x05, 1, 1)
 
 def SetMapBGM(bgm: int):
     BGMCmd(0x06, bgm)
