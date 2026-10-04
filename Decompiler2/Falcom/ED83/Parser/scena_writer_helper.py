@@ -426,6 +426,13 @@ def SetBGMVolume(volume: float, duration: int, slot: int):
 
 def ReplaceBGM(old: int, new: int):
     BGMCmd(0x05, old, new)
+    
+def WithTail(obj, tail: bytes = b'', ret: bool = True):
+    '''Table + raw bytes after it that the table class does not describe (see ScenaParser.captureTail).'''
+    obj._tail = tail
+    obj._ret = ret
+    return obj
+
 
 def SetMapBGM(bgm: int):
     BGMCmd(0x06, bgm)

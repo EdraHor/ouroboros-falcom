@@ -145,7 +145,8 @@ class _ScenaWriter:
 
         fs.AlignTo(4)
 
-        for f in self.functions:
+        for fi, f in enumerate(self.functions):
+            last = fi == len(self.functions) - 1
             if f.type in ScenaDataFunctionTypes:
                 o = f.obj()
                 if o:
@@ -164,13 +165,18 @@ class _ScenaWriter:
 
                     f.offset = fs.Position
                     fs.Write(o.serialize())
+                    fs.Write(getattr(o, '_tail', b''))      # bytes the serializer does not reproduce
+                    if getattr(o, '_ret', True):
+                        fs.WriteByte(0x01)  # the game's compiler ends tables with Return too
 
-                    fs.Position = (fs.Position + 4) & ~3
+                    if not last:
+                        fs.AlignTo(4)
 
             else:
                 f.offset = fs.Position
                 self.compileCode(fs, f)
-                fs.AlignTo(4)
+                if not last:
+                    fs.AlignTo(4)   # the game files are not padded after the last function
                 # if fs.Position % 4 != 0:
                 #     fs.Position = (fs.Position + 4) & ~3
 
@@ -189,7 +195,7 @@ class _ScenaWriter:
         [fs.WriteULong(f.offset) for f in self.functions]
 
         fs.Position = fs.END_OF_FILE
-        fs.AlignTo(8)
+        # fs.AlignTo(8)    # the game files are not padded at the end
 
     def addLabel(self, name):
         addr = self.labels.get(name)

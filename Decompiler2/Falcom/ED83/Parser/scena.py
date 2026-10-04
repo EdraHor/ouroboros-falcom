@@ -74,7 +74,12 @@ class ScenaFormatter(Assembler.Formatter):
             return
 
         body = f.obj.toPython()
-        body[0] = 'return ' + body[0]
+        tail, ret = getattr(f.obj, '_tail', b''), getattr(f.obj, '_ret', True)
+        if tail or not ret:
+            body[0] = 'return WithTail(' + body[0]
+            body[-1] += f', tail = {tail!r}' + ('' if ret else ', ret = False') + ')'
+        else:
+            body[0] = 'return ' + body[0]
         return body
 
 
@@ -248,6 +253,28 @@ class ScenaParser:
 
                 case _:
                     raise NotImplementedError(f'unknown func type: {func.type}')
+
+            if func.type != ScenaFunctionType.Code and func.obj is not None:
+                self.captureTail(func)
+
+    def captureTail(self, func: ScenaFunction):
+        '''Bytes the table serializer does not reproduce (terminator padding etc.), kept as-is.
+           Table bytes = serialize() + tail + 0x01 (Return) + alignment zeros.'''
+        fs = self.fs
+        offsets = sorted({f.offset for f in self.functions})
+        later = [o for o in offsets if o > func.offset]
+        end = later[0] if later else fs.Length
+        with fs.PositionSaver:
+            fs.Position = func.offset
+            raw = fs.Read(end - func.offset)
+        ser = func.obj.serialize()
+        if raw[:len(ser)] != ser:
+            raise Exception(f'table {func.name or func.type} at 0x{func.offset:X}: serialize() differs from the file')
+        rest = raw[len(ser):].rstrip(bytes([0]))
+        if rest.endswith(bytes([1])):          # tail + Return
+            func.obj._tail, func.obj._ret = rest[:-1], True
+        else:                                  # no Return byte after the table
+            func.obj._tail, func.obj._ret = rest, False
 
     def generatePython(self, filename: str) -> List[str]:
         formatter = ScenaFormatter(ED83ScenaOpTable, name = self.name, optimizer = ED83Optimizer())
