@@ -2,6 +2,17 @@ from Falcom.Common import *
 from Assembler     import *
 from .utils        import *
 
+
+def formatFloat32(v: float) -> str:
+    '''Text of a 32-bit float: the short %g form when it gives the same float back, else the exact repr.'''
+    import struct
+    if v != v or v in (float('inf'), float('-inf')):
+        return f"float('{v}')"
+    s = '%g' % v
+    if struct.pack('<f', float(s)) != struct.pack('<f', v):
+        s = repr(v)
+    return '-0.0' if s == '-0' else s
+
 DefaultIndent = GlobalConfig.DefaultIndent
 UserDefined = OperandType.UserDefined + 1
 
@@ -177,7 +188,7 @@ class ED83OperandDescriptor(OperandDescriptor):
             case 0x33: return f'ArgInt({value})'
             case 0x44: return f'ArgStr({value})'
             case 0xDD: return f'ParamStr({formatText(value)})'
-            case 0xEE: return f'ParamFloat({value:g})'
+            case 0xEE: return f'ParamFloat({formatFloat32(value)})'
             case 0xFF: return f'ParamInt(0x{value:04X})' if value == 100 or value % 100 != 0 else f'ParamInt({value})'
             case _: return f'({", ".join([f"0x{o.value:X}" if isinstance(o.value, int) else ("%s" % o.value) if isinstance(o.value, float) else formatText(o.value) for o in context.operand.value])})'
 
