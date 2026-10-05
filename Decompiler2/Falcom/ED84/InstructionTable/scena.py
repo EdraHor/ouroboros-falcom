@@ -1087,6 +1087,35 @@ desc_D5 = 'B', {
     0x02: '',
 }
 
+desc_D8 = 'B', {
+    0x00: 'B',
+}
+
+
+def Handler_32(ctx: InstructionHandlerContext):
+    # EffectCmd 0x0A is 'WBS' in the English minigame/dat_en/mg11.dat and 'WBSL' (as in ED85) in the Japanese
+    # minigame/dat/mg11.dat, the only scripts that use it: the u32 (always 0 there) is read when the next 4 bytes are 0
+    def getfmts(n, extra = False):
+        return desc_32[0] + desc_32[1][n] + ('L' if extra else '')
+
+    match ctx.action:
+        case HandlerAction.Disassemble:
+            inst = ctx.instruction
+            n = peekByte(ctx)
+            inst.operands = readAllOperands(ctx, getfmts(n))
+            if n == 0x0A and peekBytes(ctx, 4) == bytes(4):
+                inst.operands.extend(readAllOperands(ctx, 'L'))
+            return inst
+
+        case HandlerAction.Assemble:
+            ops = ctx.instruction.operands
+            fmts = getfmts(ops[0].value)
+            applyDescriptors(ctx, getfmts(ops[0].value, len(ops) > len(fmts)))
+            return
+
+        case HandlerAction.CodeGen:
+            return genVariadicFuncStub(ctx.descriptor, int)
+
 
 ScenaOpTable = ED84InstructionTable(ED83ScenaOpTable).update([
     inst(0x19,  'OP_19',                        'BW'),
@@ -1094,7 +1123,7 @@ ScenaOpTable = ED84InstructionTable(ED83ScenaOpTable).update([
     inst(0x29,  'MenuCmd',                      desc_29),
     inst(0x2B,  'Battle',                       desc_2B),
     inst(0x2F,  'AnimeClipCmd',                 desc_2F,                parameters = ('type', 'chrId')),
-    inst(0x32,  'EffectCmd',                    desc_32),
+    inst(0x32,  'EffectCmd',                    NoOperand,                                      handler = Handler_32),
     inst(0x33,  'BattleCmd',                    NoOperand,                                      handler = Handler_33),
     inst(0x34,  'OP_34',                        'BffffW'),
     inst(0x36,  'CameraCmd',                    desc_36),
@@ -1149,6 +1178,7 @@ ScenaOpTable = ED84InstructionTable(ED83ScenaOpTable).update([
     inst(0xD5,  'OP_D5',                        desc_D5),
     inst(0xD6,  'OP_D6',                        'WVVVV'),
     inst(0xD7,  'AddBattleCount',               'BL'),
+    inst(0xD8,  'OP_D8',                        desc_D8),
 ])
 
 del inst

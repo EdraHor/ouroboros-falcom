@@ -301,8 +301,8 @@ def LoadAssetAsync(asset: str):
 
 # effect 0x32
 
-def LoadEffect(chrId: int, slot: int, eff: str):
-    EffectCmd(0x0A, chrId, slot, eff)
+def LoadEffect(chrId: int, slot: int, eff: str, *extra: int):
+    EffectCmd(0x0A, chrId, slot, eff, *extra)      # extra: the u32 of the Japanese mg11
 
 def ReleaseEffect(chrId: int, slot: int):
     EffectCmd(0x0B, chrId, slot)

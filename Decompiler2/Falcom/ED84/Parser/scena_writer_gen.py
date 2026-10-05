@@ -1705,3 +1705,8 @@ def OP_D7(arg1: uint8, arg2: uint32):
     assert isinstance(arg1, uint8)
     assert isinstance(arg2, uint32)
     _gScena.handleOpCode(0xD7, arg1, arg2)
+
+def OP_D8(arg1: int, *args):
+    # 0xD8
+    assert isinstance(arg1, int)
+    return _gScena.handleOpCode(0xD8, arg1, *args)
