@@ -1,11 +1,12 @@
 # ouroboros-falcom
 
 A trimmed fork of [Ouroboros/Falcom](https://github.com/Ouroboros/Falcom) ("Decompiler2") for the script files
-of **Trails of Cold Steel III** (`Falcom/ED83`), with fixes so that every original script of the game decompiles
-to Python and compiles back to the same file. Useful for fan translations into any language.
+of **Trails of Cold Steel III** (`Falcom/ED83`) and **Trails of Cold Steel IV** (`Falcom/ED84`), with fixes so that
+every original script of the games decompiles to Python and compiles back to the same file. Useful for fan
+translations into any language.
 
 * Branch `main` (this one): only `Decompiler2` for Cold Steel III (ED83), Cold Steel IV (ED84) and Reverie (ED85),
-  plus the fixes below. All fixes are in ED83 (and one in the shared `Assembler`); ED84/ED85 are as upstream.
+  plus the fixes below. ED85 is as upstream.
 * Branch `master`: the original repository, unchanged. The upstream README is kept as `README.upstream.md`.
 
 ## Requirements
@@ -16,7 +17,7 @@ to Python and compiles back to the same file. Useful for fan translations into a
 
 ```
 set PYTHONPATH=<this repo>\Decompiler2;<ouroboros-pylibs>
-python -m Falcom.ED83.scena2py t0060.dat      -> t0060.py
+python -m Falcom.ED83.scena2py t0060.dat      -> t0060.py      (Cold Steel III; ED84 for Cold Steel IV)
 python t0060.py                               -> t0060.dat (written to the current directory)
 ```
 
@@ -24,6 +25,8 @@ python t0060.py                               -> t0060.dat (written to the curre
 removed when `PYTHONPATH` is set.
 
 ## Fixes (one commit each)
+
+Cold Steel III (ED83, partly shared with ED84):
 
 1. `ModelCmd 0x07` takes 8 int operands, like `0x08`. Before, the operands were decoded as instructions and the
    rebuilt `system.dat` (ARCUS menu) crashed the game.
@@ -43,9 +46,23 @@ removed when `PYTHONPATH` is set.
    layout from SenScriptsDecompiler. Books could not be decompiled before.
 7. `ReplaceBGMReset()` helper (used by decompiled `a0000`).
 
+Cold Steel IV (ED84):
+
+8. Opcode `OP_D8` (`e2200`, `m1300`, `m5070`, `m9102`, `r1410`, `r2800`, `t3520` could not be decompiled) and the
+   longer `EffectCmd 0x0A` / `LoadEffect` with one more u32 (Japanese `minigame/dat/mg11.dat`, as in ED85).
+9. Book files, as for Cold Steel III.
+10. Bytes after data tables, as for Cold Steel III (`WithTail`, `BreakTableTerm`); tables end with Return except
+    `FaceAuto`. Before, 59 battle files did not compile back.
+11. Strings of data tables (AnimeClips paths like `map\m9031_00.eff`, names) are written with escapes.
+12. `ParamFloat` values are written exactly (`%g` changed 14 scena files and `btl0409`, -0.0 became 0).
+13. An `AlgoTable` that ends the file without its terminator entry (`almon355_c00`, `almon355_c01`) is written back
+    as `AlgoTableNoTerm(...)`.
+
 ## Verification
 
-Every original English script of the Steam version: decompile -> compile -> byte comparison with the original.
+Every original script of the Steam versions: decompile -> compile -> byte comparison with the original.
+
+Cold Steel III (English):
 
 | folder | files | result |
 |---|---|---|
@@ -55,10 +72,23 @@ Every original English script of the Steam version: decompile -> compile -> byte
 | battle | 475 | identical |
 | book | 18 | identical |
 
+Cold Steel IV (English and Japanese):
+
+| folder | files (en / jp) | result |
+|---|---|---|
+| scena | 448 / 448 | 412 / 412 identical, 36 / 36 differ only by dropped unreachable code |
+| talk | 162 / 161 | 144 / 143 identical, 18 / 18 differ only by dropped unreachable code |
+| minigame | 6 / 6 | identical |
+| battle | 795 / 795 | 789 / 789 identical, 6 / 6 differ only by dropped unreachable code |
+| book | 24 / 24 | identical |
+
 "Unreachable code" is what the decompiler leaves out because nothing can reach it (e.g. a jump right after
-`Return`, debug functions); it does not change how the game runs. `ani` (animation scripts, no text) is not covered.
+`Return`, debug functions); it does not change how the game runs. Such files are checked by decompiling the rebuilt
+file again: the script is the same. `ani` (animation scripts, no text) is not covered. Five Cold Steel IV
+`scena` files (`a0102`, `a0104`, `a0106`, `a0108`, `a2050`) are Cold Steel III leftovers and are decompiled with ED83.
 
 ## Credits
 
 Decompiler2 and `ml` are by [Ouroboros](https://github.com/Ouroboros). Book and monster set layouts follow
-[SenScriptsDecompiler](https://github.com/TwnKey/SenScriptsDecompiler) by TwnKey.
+[SenScriptsDecompiler](https://github.com/TwnKey/SenScriptsDecompiler) by TwnKey. `OP_D8` follows the Russian
+translation team of Cold Steel IV.
