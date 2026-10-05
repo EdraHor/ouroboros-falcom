@@ -124,6 +124,9 @@ class ScenaParser:
         if typ:
             return typ
 
+        if name.startswith('BookData'):
+            return ScenaFunctionType.BookData99 if name.endswith('_99') else ScenaFunctionType.BookData
+
         if any([
                 name == '',
                 name.startswith('BTLSET'),
@@ -264,6 +267,12 @@ class ScenaParser:
 
                 case ScenaFunctionType.FaceAuto:
                     func.obj = ScenaFaceAuto(fs = fs)
+
+                case ScenaFunctionType.BookData99:
+                    func.obj = ScenaBookData99(fs = fs)
+
+                case ScenaFunctionType.BookData:
+                    func.obj = ScenaBookData(fs = fs)
 
                 case ScenaFunctionType.ShinigPomBtlset:
                     raise NotImplementedError
