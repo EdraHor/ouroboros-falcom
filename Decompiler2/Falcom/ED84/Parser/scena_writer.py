@@ -173,13 +173,9 @@ class _ScenaWriter:
 
                     f.offset = fs.Position
                     fs.Write(o.serialize())
-
-                    match f.type:
-                        case ScenaFunctionType.FaceAuto:
-                            pass
-
-                        case _:
-                            fs.WriteByte(1)
+                    fs.Write(getattr(o, '_tail', b''))      # bytes the serializer does not reproduce
+                    if getattr(o, '_ret', f.type != ScenaFunctionType.FaceAuto):
+                        fs.WriteByte(1)                     # tables end with Return, except FaceAuto
                     # fs.Position = (fs.Position + 4) & ~3
 
             else:
