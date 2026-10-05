@@ -380,7 +380,7 @@ class ScenaBattleSetting:
     def toPython(self) -> List[str]:
         body = [
             f'ScenaBattleSetting(',
-            f'{DefaultIndent}mapName        = \'{self.mapName}\',',
+            f'{DefaultIndent}mapName        = {self.mapName!r},',
             f'{DefaultIndent}x              = {self.x},',
             f'{DefaultIndent}y              = {self.y},',
             f'{DefaultIndent}z              = {self.z},',
@@ -394,7 +394,7 @@ class ScenaBattleSetting:
             f'{DefaultIndent}word34         = {self.word34},',
             f'{DefaultIndent}word36         = {self.word36},',
             f'{DefaultIndent}atBonus        = {self.atBonus},',
-            f'{DefaultIndent}battleScript   = \'{self.battleScript}\',',
+            f'{DefaultIndent}battleScript   = {self.battleScript!r},',
             f'{DefaultIndent}monsterSet     = [',
         ]
 
@@ -450,7 +450,7 @@ class ScenaAnimeClipItem:
             f'{DefaultIndent}type   = 0x{self.type:04X},',
             f'{DefaultIndent}type2  = 0x{self.type2:04X},',
             f'{DefaultIndent}dword4 = 0x{self.dword4:08X},',
-            f'{DefaultIndent}name   = \'{self.name}\',',
+            f'{DefaultIndent}name   = {self.name!r},',
             ')',
         ]
 
@@ -534,8 +534,8 @@ class ScenaAnimeClipTableEntry:
 
         if self.catalog != 0:
             f.extend([
-                f"{DefaultIndent}asset      = '{self.asset}',",
-                f"{DefaultIndent}symbol     = '{self.symbol}',",
+                f"{DefaultIndent}asset      = {self.asset!r},",
+                f"{DefaultIndent}symbol     = {self.symbol!r},",
             ])
 
         f.append(')')
@@ -891,9 +891,9 @@ class ScenaActionTableEntry:
             f'{DefaultIndent}effect5Param2 = {self.effect5Param2},',
             f'{DefaultIndent}effect5Param3 = {self.effect5Param3},',
             f'{DefaultIndent}cp            = {self.cp},',
-            f"{DefaultIndent}flags         = '{self.flags}',",
-            f"{DefaultIndent}action        = '{self.action}',",
-            f'{DefaultIndent}name          = "{self.name}",',
+            f"{DefaultIndent}flags         = {self.flags!r},",
+            f"{DefaultIndent}action        = {self.action!r},",
+            f'{DefaultIndent}name          = {self.name!r},',
             ')',
         ]
 
@@ -1172,7 +1172,7 @@ class ScenaSummonTableEntry:
 
     def toPython(self) -> List[str]:
         return [
-            f'ScenaSummonTableEntry(0x{self.id:04X}, 0x{self.byte2:02X}, 0x{self.byte3:02X}, \'{self.name}\')',
+            f'ScenaSummonTableEntry(0x{self.id:04X}, 0x{self.byte2:02X}, 0x{self.byte3:02X}, {self.name!r})',
         ]
 
 class ScenaSummonTable:
@@ -1288,7 +1288,7 @@ class ScenaPartTableEntry:
 
     def toPython(self) -> List[str]:
         return [
-            f'ScenaPartTableEntry({self.id}, \'{self.name1}\', \'{self.name2}\')',
+            f'ScenaPartTableEntry({self.id}, {self.name1!r}, {self.name2!r})',
         ]
 
 class ScenaPartTable:
@@ -1438,7 +1438,7 @@ class ScenaFaceAuto:
         return utils.pad_string(self.s, 0x10)
 
     def toPython(self) -> List[str]:
-        return [f"ScenaFaceAuto('{self.s}')"]
+        return [f"ScenaFaceAuto({self.s!r})"]
 
 class ScenaBookData99:
     """book/*.dat, BookDataNN_99: two shorts (layout from SenScriptsDecompiler)."""

@@ -59,4 +59,4 @@ class ScenaStyleName:
         return utils.pad_string(self.style, 0x40) + utils.pad_string(self.styleEn, 0x40)
 
     def toPython(self) -> List[str]:
-        return [f"ScenaStyleName('{self.style}', '{self.styleEn}')"]
+        return [f"ScenaStyleName({self.style!r}, {self.styleEn!r})"]
