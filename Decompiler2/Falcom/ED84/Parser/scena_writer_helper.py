@@ -530,6 +530,11 @@ def ReplaceBGM(old: int, new: int):
 def ReplaceBGMReset():
     BGMCmd(0x05, 1, 1)
 
+def AlgoTableNoTerm(table):
+    '''AlgoTable without the terminator entry (it ends the file).'''
+    table._noTerm = True
+    return table
+
 def BreakTableTerm(table, high: int):
     '''BreakTable whose terminator record has this high word (the game uses 1 or 0).'''
     table._termHigh = high

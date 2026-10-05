@@ -1039,6 +1039,10 @@ class ScenaAlgoTable:
 
         self.entries = []
         for _ in range(0x40):
+            if fs.Remaining < 2:        # the table ends the file and has no terminator entry
+                self._noTerm = True
+                break
+
             e = ScenaAlgoTableEntry(fs = fs)
 
             self.entries.append(e)
@@ -1050,7 +1054,8 @@ class ScenaAlgoTable:
         for e in self.entries:
             b.extend(e.serialize())
 
-        if not self.entries or self.entries[-1].craftId != ScenaAlgoTableEntry.InvalidID:
+        if not getattr(self, '_noTerm', False) and \
+                (not self.entries or self.entries[-1].craftId != ScenaAlgoTableEntry.InvalidID):
             b.extend(ScenaAlgoTableEntry(0, 0, 0, 0, 0, [0] * 3, [0] * 3).serialize())
 
         return bytes(b)
@@ -1065,6 +1070,9 @@ class ScenaAlgoTable:
             b[-1] += ','
 
         b.append(')')
+        if getattr(self, '_noTerm', False):
+            b[0] = 'AlgoTableNoTerm(' + b[0]
+            b[-1] += ')'
         return b
 
 class ScenaWeaponAttTable:
