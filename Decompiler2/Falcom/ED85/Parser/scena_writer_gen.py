@@ -1674,10 +1674,10 @@ def OP_CE(arg1: int, *args):
     assert isinstance(arg1, int)
     return _gScena.handleOpCode(0xCE, arg1, *args)
 
-def OP_CF(arg1: uint8):
+def OP_CF(arg1: int, *args):
     # 0xCF
-    assert isinstance(arg1, uint8)
-    _gScena.handleOpCode(0xCF, arg1)
+    assert isinstance(arg1, int)
+    return _gScena.handleOpCode(0xCF, arg1, *args)
 
 def OP_D0(arg1: int, *args):
     # 0xD0

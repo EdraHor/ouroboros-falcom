@@ -1,6 +1,7 @@
 from Falcom.Common  import *
 from Assembler      import *
 from .types         import *
+import collections
 from Falcom.ED84.InstructionTable import ED84InstructionTable, ScenaOpTable as ED84ScenaOpTable
 
 __all__ = (
@@ -57,11 +58,8 @@ class ED85InstructionTable(ED84InstructionTable):
         if size != inst.size:
             # HACK
             if (inst.opcode, context.offset) in [
-                (0x3E, 0x0000741B),       # a1001
-                (0x3E, 0x0003F278),       # e3100
                 (0x3E, 0x00002C08),       # mg14_00
                 (0x3E, 0x0000090F),       # mg14_99
-                (0xCF, 0x00017498),       # a0000
             ]:
                 context.disasmContext.fs.Position = context.offset + size
                 return
@@ -339,6 +337,7 @@ def Handler_3E(ctx: InstructionHandlerContext):
         return 'NNfB' + {
             0xFE12: 'B',
             0xFE13: 'f',
+            0xFFFF: 'BBB',      # a1001, e3100: three more bytes (always zero there)
         }.get(n, '')
 
     match ctx.action:
@@ -1490,6 +1489,10 @@ desc_E3 = 'B', {
     0x05: '',
 }
 
+desc_CF = 'B', collections.defaultdict(str, {
+    0x14: 'W',          # a0000
+})
+
 desc_E5 = 'B', {
     0x00: 'B',
     0x01: 'BB',
@@ -1550,6 +1553,7 @@ ScenaOpTable = ED85InstructionTable(ED84ScenaOpTable).update([
     inst(0xC4,  'OP_C4',                        desc_C4),
     inst(0xC5,  'OP_C5',                        desc_C5),
     inst(0xC8,  'OP_C8',                        desc_C8),
+    inst(0xCF,  'OP_CF',                        desc_CF),
     inst(0xD9,  'OP_D9',                        desc_D9),
     inst(0xDA,  'OP_DA',                        desc_DA),
     inst(0xDB,  'OP_DB',                        'B'),
