@@ -1,12 +1,12 @@
 # ouroboros-falcom
 
 A trimmed fork of [Ouroboros/Falcom](https://github.com/Ouroboros/Falcom) ("Decompiler2") for the script files
-of **Trails of Cold Steel III** (`Falcom/ED83`) and **Trails of Cold Steel IV** (`Falcom/ED84`), with fixes so that
-every original script of the games decompiles to Python and compiles back to the same file. Useful for fan
-translations into any language.
+of **Trails of Cold Steel III** (`Falcom/ED83`), **Trails of Cold Steel IV** (`Falcom/ED84`) and **Trails into
+Reverie** (`Falcom/ED85`), with fixes so that every original script of the games decompiles to Python and compiles
+back to the same file. Useful for fan translations into any language.
 
 * Branch `main` (this one): only `Decompiler2` for Cold Steel III (ED83), Cold Steel IV (ED84) and Reverie (ED85),
-  plus the fixes below. ED85 is as upstream.
+  plus the fixes below.
 * Branch `master`: the original repository, unchanged. The upstream README is kept as `README.upstream.md`.
 
 ## Requirements
@@ -17,7 +17,7 @@ translations into any language.
 
 ```
 set PYTHONPATH=<this repo>\Decompiler2;<ouroboros-pylibs>
-python -m Falcom.ED83.scena2py t0060.dat      -> t0060.py      (Cold Steel III; ED84 for Cold Steel IV)
+python -m Falcom.ED83.scena2py t0060.dat      -> t0060.py      (Cold Steel III; ED84 Cold Steel IV, ED85 Reverie)
 python t0060.py                               -> t0060.dat (written to the current directory)
 ```
 
@@ -58,6 +58,16 @@ Cold Steel IV (ED84):
 13. An `AlgoTable` that ends the file without its terminator entry (`almon355_c00`, `almon355_c01`) is written back
     as `AlgoTableNoTerm(...)`.
 
+Reverie (ED85):
+
+14. The dword `00 00 00 FF` after the script name is written (every script has it; all offsets were shifted by 4).
+15. `OP_3E` with the second word `0xFFFF` has three more bytes (`a1001`, `e3100`), `OP_CF 0x14` a word more
+    (`a0000`). The upstream skip list by file offset no longer matched the current game files.
+16. Book files (`BookData`), as for Cold Steel III and IV.
+17. Data tables are read with the Reverie entry classes (a full terminator entry), `ReactionTable` ends with a
+    `0xFFFF` entry, an `AlgoTable` without terminator before short functions (`almon355_c01`); bytes after tables
+    are kept (`WithTail`).
+
 ## Verification
 
 Every original script of the Steam versions: decompile -> compile -> byte comparison with the original.
@@ -82,10 +92,24 @@ Cold Steel IV (English and Japanese):
 | battle | 795 / 795 | 789 / 789 identical, 6 / 6 differ only by dropped unreachable code |
 | book | 24 / 24 | identical |
 
+Reverie (English; the PC version has no Japanese scripts):
+
+| folder | files | result |
+|---|---|---|
+| scena | 442 | 415 identical, 27 differ only by dropped unreachable code |
+| talk | 140 | 139 identical, 1 differs only by dropped unreachable code |
+| minigame | 11 | identical |
+| battle | 1172 | 1170 identical, 2 differ only by dropped unreachable code |
+| book | 29 | identical |
+
+Every Reverie instruction carries a dword with its source line and size; the compiler writes `0xFF000000` there
+(as upstream), and the game accepts it. "Identical" for Reverie means identical except these dwords.
+
 "Unreachable code" is what the decompiler leaves out because nothing can reach it (e.g. a jump right after
 `Return`, debug functions); it does not change how the game runs. Such files are checked by decompiling the rebuilt
 file again: the script is the same. `ani` (animation scripts, no text) is not covered. Five Cold Steel IV
-`scena` files (`a0102`, `a0104`, `a0106`, `a0108`, `a2050`) are Cold Steel III leftovers and are decompiled with ED83.
+`scena` files (`a0102`, `a0104`, `a0106`, `a0108`, `a2050`) and Reverie `a0106` are Cold Steel III leftovers and are
+decompiled with ED83.
 
 ## Credits
 
