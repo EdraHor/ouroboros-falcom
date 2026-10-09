@@ -97,6 +97,12 @@ class _ScenaWriter:
     def FaceAuto(self, name: str):
         return self.functionDecorator(name, ED85.ScenaFunctionType.FaceAuto)
 
+    def BookData99(self, name: str):
+        return self.functionDecorator(name, ED85.ScenaFunctionType.BookData99)
+
+    def BookData(self, name: str):
+        return self.functionDecorator(name, ED85.ScenaFunctionType.BookData)
+
     def ShinigPomBtlset(self, name: str):
         return self.functionDecorator(name, ED85.ScenaFunctionType.ShinigPomBtlset)
 

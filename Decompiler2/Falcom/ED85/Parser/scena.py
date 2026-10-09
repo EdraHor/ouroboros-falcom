@@ -129,6 +129,9 @@ class ScenaParser:
         if typ:
             return typ
 
+        if name.startswith('BookData'):
+            return ScenaFunctionType.BookData99 if name.endswith('_99') else ScenaFunctionType.BookData
+
         if any([
                 name == '',
                 name.startswith('BTLSET'),
@@ -279,8 +282,36 @@ class ScenaParser:
                 case ScenaFunctionType.StyleName:
                     func.obj = ScenaStyleName(fs = fs)
 
+                case ScenaFunctionType.BookData99:
+                    func.obj = ScenaBookData99(fs = fs)
+
+                case ScenaFunctionType.BookData:
+                    func.obj = ScenaBookData(fs = fs)
+
                 case _:
                     raise NotImplementedError(f'unknown func type: {func.type}')
+
+            if func.type != ScenaFunctionType.Code and func.obj is not None:
+                self.captureTail(func)
+
+    def captureTail(self, func: ScenaFunction):
+        '''Bytes the table serializer does not reproduce (entries after the terminator etc.), kept as-is.
+           Table bytes = serialize() + tail + 0x01 (Return, not after FaceAuto) + alignment zeros.'''
+        fs = self.fs
+        offsets = sorted({f.offset for f in self.functions})
+        later = [o for o in offsets if o > func.offset]
+        end = later[0] if later else fs.Length
+        with fs.PositionSaver:
+            fs.Position = func.offset
+            raw = fs.Read(end - func.offset)
+        ser = func.obj.serialize()
+        if raw[:len(ser)] != ser:
+            raise Exception(f'table {func.name or func.type} at 0x{func.offset:X}: serialize() differs from the file')
+        rest = raw[len(ser):].rstrip(bytes([0]))
+        if rest.endswith(bytes([1])):          # tail + Return
+            func.obj._tail, func.obj._ret = rest[:-1], True
+        else:                                  # no Return byte after the table
+            func.obj._tail, func.obj._ret = rest, False
 
     def generatePython(self, filename: str) -> List[str]:
         formatter = ScenaFormatter(ED85ScenaOpTable, name = self.name, optimizer = ED85Optimizer())
