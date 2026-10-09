@@ -75,7 +75,13 @@ class ScenaFormatter(Assembler.Formatter):
             return
 
         body = f.obj.toPython()
-        body[0] = 'return ' + body[0]
+        tail = getattr(f.obj, '_tail', b'')
+        ret = getattr(f.obj, '_ret', f.type != ScenaFunctionType.FaceAuto)
+        if tail or ret != (f.type != ScenaFunctionType.FaceAuto):
+            body[0] = 'return WithTail(' + body[0]
+            body[-1] += f', tail = {tail!r}, ret = {ret})'
+        else:
+            body[0] = 'return ' + body[0]
         return body
 
 

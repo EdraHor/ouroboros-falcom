@@ -157,3 +157,58 @@ class ScenaActionTable(ed84.ScenaActionTable):
             b.extend(ScenaActionTableEntry(craftId = ScenaActionTableEntry.InvalidCraftID).serialize())
 
         return bytes(b)
+
+    def read(self, fs: fileio.FileStream):
+        # the same loop as in ED83, but with the Reverie entries (the terminator is a full entry, see hasExitCode)
+        if not fs:
+            return
+
+        self.actions = []
+        for _ in range(0x40):
+            entry = ScenaActionTableEntry(fs = fs)
+            if entry.craftId == ScenaActionTableEntry.InvalidCraftID:
+                break
+
+            self.actions.append(entry)
+
+class ScenaAlgoTable(ed84.ScenaAlgoTable):
+    def read(self, fs: fileio.FileStream):
+        # the same loop as in ED83, but with the Reverie entries (the terminator is a full entry, see hasExitCode)
+        if not fs:
+            return
+
+        self.entries = []
+        for _ in range(0x40):
+            if fs.Remaining < 0x20:     # no room for another entry: no terminator (almon355_c01)
+                self._noTerm = True
+                break
+
+            e = ScenaAlgoTableEntry(fs = fs)
+
+            self.entries.append(e)
+            if e.craftId == ScenaAlgoTableEntry.InvalidID:
+                break
+
+class ScenaReactionTable(ed84.ScenaReactionTable):
+    # Reverie ends the table with a 0xFFFF entry (kept as an entry); without it 8 entries fill the table
+    EndID = 0xFFFF
+
+    def read(self, fs: fileio.FileStream):
+        if not fs:
+            return
+
+        self.reactions = []
+        for _ in range(8):
+            e = ScenaReactionTableEntry(fs = fs)
+            if e.craftId == ScenaReactionTableEntry.InvalidID:
+                break
+
+            self.reactions.append(e)
+            if e.craftId == self.EndID:
+                break
+
+    def serialize(self) -> bytes:
+        if self.reactions and self.reactions[-1].craftId == self.EndID:
+            return b''.join(e.serialize() for e in self.reactions)
+
+        return super().serialize()
