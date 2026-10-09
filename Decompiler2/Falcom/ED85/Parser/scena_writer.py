@@ -126,6 +126,8 @@ class _ScenaWriter:
         if len(name) % 4 != 0:
             name += b'\x00' * (4 - len(name) % 4)
 
+        name += b'\x00\x00\x00\xff'     # Reverie scripts have this dword after the name
+
         hdr.functionEntryOffset = hdr.headerSize + len(name)
         hdr.functionEntrySize   = len(self.functions) * 4
         hdr.functionNameOffset  = hdr.functionEntryOffset + hdr.functionEntrySize
